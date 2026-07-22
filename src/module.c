@@ -1,7 +1,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 //#include <zephyr/drivers/led.h>
-#include <zmk/battery.h>
+#include <zmk/events/battery_state_changed.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_ALIAS(red_led)), "Alias 'red_led' not found.");
 BUILD_ASSERT(DT_NODE_EXISTS(DT_ALIAS(green_led)), "Alias 'green_led' not found.");
