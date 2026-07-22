@@ -1,6 +1,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/usb/usb_device.h>
 //#include <zmk/events/battery_state_changed.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(red_led)), "Node 'red_led' not found.");
@@ -21,20 +22,51 @@ static struct gpio_callback stat2_cb_data;
 
 static bool stat1_enabled = false;
 static bool stat2_enabled = false;
+static bool usb_connected = false;
 
-static void update_charge_status(int s1, int s2){
-	if(s1 < 0 || s2 < 0) return;
+static void usb_status_cb(enum usb_dc_status_code status, const uint8_t *param){
+    switch (status) {
+    	case USB_DC_CONNECTED:
+        	usb_connected = true;
+			update_charge_status();
+        break;
 
-	stat1_enabled = !s1;
-	stat2_enabled = !s2;
+    	case USB_DC_DISCONNECTED:
+        	usb_connected = false;
+			update_charge_status();
+        break;
+    }
+}
 
-	gpio_pin_set_dt(&led_red, stat1_enabled);
-	gpio_pin_set_dt(&led_green, stat2_enabled);
+static void update_charge_status(){
+	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_connected;
+	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_connected;
+
+	if(is_charging){
+		gpio_pin_set_dt(&led_red, 0);
+		gpio_pin_set_dt(&led_green, 1);
+	}else if(finished_charging){
+		gpio_pin_set_dt(&led_red, 1);
+		gpio_pin_set_dt(&led_green, 1);
+	}else{
+		gpio_pin_set_dt(&led_red, 1);
+		gpio_pin_set_dt(&led_green, 0);
+	}
 }
 
 static void bat_led_work_handler(struct k_work *work){
+	int s1 = gpio_pin_get_dt(&stat1_pin);
+	int s2 = gpio_pin_get_dt(&stat2_pin);
+
+	if(s1 < 0 || s2 < 0) return;
+
+	stat1_enabled = s1;
+	stat2_enabled = s2;
+
+	update_charge_status();
+
 	//k_work_reschedule(&led_work, K_SECONDS(1));
-	update_charge_status(gpio_pin_get_dt(&stat1_pin), gpio_pin_get_dt(&stat2_pin));
+	
 	//@TODO: Handle sleep
 }
 
@@ -87,6 +119,9 @@ static int bat_led_init(void){
 		ret = gpio_add_callback(stat2_pin.port, &stat2_cb_data);
 		if(ret < 0) return ret;
 	}
+
+	usb_dc_register_status_callback(usb_status_cb);
+	usb_connected = usb_dc_is_connected();
 
     return 0;
 }
