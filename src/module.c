@@ -3,11 +3,11 @@
 //#include <zephyr/drivers/led.h>
 #include <zmk/events/battery_state_changed.h>
 
-BUILD_ASSERT(DT_NODE_EXISTS(DT_ALIAS(red_led)), "Alias 'red_led' not found.");
-BUILD_ASSERT(DT_NODE_EXISTS(DT_ALIAS(green_led)), "Alias 'green_led' not found.");
+BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(red_led)), "Alias 'red_led' not found.");
+BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(green_led)), "Alias 'green_led' not found.");
 
-static const struct gpio_dt_spec led_red = GPIO_DT_SPEC_GET(DT_ALIAS(red_led), gpios);
-static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(DT_ALIAS(green_led), gpios);
+static const struct gpio_dt_spec led_red = GPIO_DT_SPEC_GET(DT_NODELABEL(red_led), gpios);
+static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(DT_NODELABEL(green_led), gpios);
 
 static struct k_work_delayable led_work;
 static bool led_state = false;
