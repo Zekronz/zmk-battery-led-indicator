@@ -24,20 +24,6 @@ static bool stat1_enabled = false;
 static bool stat2_enabled = false;
 static bool usb_connected = false;
 
-static void usb_status_cb(enum usb_dc_status_code status, const uint8_t *param){
-    switch (status) {
-    	case USB_DC_CONNECTED:
-        	usb_connected = true;
-			update_charge_status();
-        break;
-
-    	case USB_DC_DISCONNECTED:
-        	usb_connected = false;
-			update_charge_status();
-        break;
-    }
-}
-
 static void update_charge_status(void){
 	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_connected;
 	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_connected;
@@ -52,6 +38,20 @@ static void update_charge_status(void){
 		gpio_pin_set_dt(&led_red, 1);
 		gpio_pin_set_dt(&led_green, 0);
 	}
+}
+
+static void usb_status_cb(enum usb_dc_status_code status, const uint8_t *param){
+    switch(status){
+    	case USB_DC_CONNECTED:
+        	usb_connected = true;
+			update_charge_status();
+        break;
+
+    	case USB_DC_DISCONNECTED:
+        	usb_connected = false;
+			update_charge_status();
+        break;
+    }
 }
 
 static void bat_led_work_handler(struct k_work *work){
