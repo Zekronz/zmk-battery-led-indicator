@@ -45,6 +45,7 @@ static int bat_led_init(void){
     gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
     gpio_pin_configure_dt(&led_green, GPIO_OUTPUT_INACTIVE);
 
+	k_work_init_delayable(&led_work, bat_led_work_handler);
     k_work_schedule(&led_work, K_NO_WAIT);
 
     return 0;
