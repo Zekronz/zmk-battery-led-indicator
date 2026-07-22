@@ -5,7 +5,7 @@ manifest:
   projects:
     # Together with the above defined remote, this refers to a module located at
     # https://github.com/remote-name/repository-name
-    - name: zmk-feature-battery_led_indicator
-      remote: zmk-battery-led-indicator
+    - name: zmk-battery-led-indicator
+      remote: Zekronz
       # This points to a west manifest file in the remote module for further imports
       import: west.yml
