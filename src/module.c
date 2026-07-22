@@ -4,6 +4,7 @@
 
 //#include <zmk/events/battery_state_changed.h>
 #include <zmk/event_manager.h>
+#include <zmk/events/usb_conn_state_changed.h>
 #include <zmk/usb.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(red_led)), "Node 'red_led' not found.");
