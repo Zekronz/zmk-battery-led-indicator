@@ -6,14 +6,14 @@
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(red_led)), "Node 'red_led' not found.");
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(green_led)), "Node 'green_led' not found.");
 
-BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(stat1)), "Node 'stat1' not found.");
-BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(stat2)), "Node 'stat2' not found.");
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(charge_status), stat1));
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(charge_status), stat2));
 
 static const struct gpio_dt_spec led_red = GPIO_DT_SPEC_GET(DT_NODELABEL(red_led), gpios);
 static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(DT_NODELABEL(green_led), gpios);
 
-static const struct gpio_dt_spec stat1_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(stat1), gpios);
-static const struct gpio_dt_spec stat2_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(stat2), gpios);
+static const struct gpio_dt_spec stat1_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat1);
+static const struct gpio_dt_spec stat2_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat2);
 
 static struct k_work_delayable led_work;
 static struct gpio_callback stat1_cb_data;
