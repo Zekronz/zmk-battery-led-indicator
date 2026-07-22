@@ -1,9 +1,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/drivers/usb/usb_dc.h>
+
 //#include <zmk/events/battery_state_changed.h>
+#inlcude <zmk/usb.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(red_led)), "Node 'red_led' not found.");
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(green_led)), "Node 'green_led' not found.");
@@ -23,11 +23,12 @@ static struct gpio_callback stat2_cb_data;
 
 static bool stat1_enabled = false;
 static bool stat2_enabled = false;
-static bool usb_connected = false;
 
 static void update_charge_status(void){
-	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_connected;
-	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_connected;
+	bool usb_power = zmk_usb_is_powered();
+
+	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_power;
+	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_power;
 
 	if(is_charging){
 		gpio_pin_set_dt(&led_red, 0);
@@ -41,18 +42,8 @@ static void update_charge_status(void){
 	}
 }
 
-static void usb_status_cb(enum usb_dc_status_code status, const uint8_t *param){
-    switch(status){
-    	case USB_DC_CONNECTED:
-        	usb_connected = true;
-			update_charge_status();
-        break;
-
-    	case USB_DC_DISCONNECTED:
-        	usb_connected = false;
-			update_charge_status();
-        break;
-    }
+static int usb_cb(const zmk_event_t *eh){
+	update_charge_status();
 }
 
 static void bat_led_work_handler(struct k_work *work){
@@ -128,12 +119,12 @@ static int bat_led_init(void){
 		if(ret < 0) return ret;
 	}
 
-	usb_dc_register_status_callback(usb_status_cb);
-	usb_connected = usb_dc_is_connected();
-
 	update_charge_status();
 
     return 0;
 }
+
+ZMK_LISTENER(usb_state_listener, usb_cb);
+ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
 SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
