@@ -38,7 +38,7 @@ static void usb_status_cb(enum usb_dc_status_code status, const uint8_t *param){
     }
 }
 
-static void update_charge_status(){
+static void update_charge_status(void){
 	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_connected;
 	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_connected;
 
@@ -96,7 +96,14 @@ static int bat_led_init(void){
 	ret = gpio_pin_configure_dt(&stat2_pin, GPIO_INPUT);
 	if(ret < 0) return ret;
 
-	update_charge_status(gpio_pin_get_dt(&stat1_pin), gpio_pin_get_dt(&stat2_pin));
+	int s1 = gpio_pin_get_dt(&stat1_pin);
+	if(s1 < 0) return s1;
+
+	int s2 = gpio_pin_get_dt(&stat2_pin);
+	if(s2 < 0) return s2;
+
+	stat1_enabled = s1;
+	stat2_enabled = s2;
 
 	ret = gpio_pin_interrupt_configure_dt(&stat1_pin, GPIO_INT_EDGE_BOTH);
 	if(ret < 0) return ret;
@@ -122,6 +129,8 @@ static int bat_led_init(void){
 
 	usb_dc_register_status_callback(usb_status_cb);
 	usb_connected = usb_dc_is_connected();
+
+	update_charge_status();
 
     return 0;
 }
