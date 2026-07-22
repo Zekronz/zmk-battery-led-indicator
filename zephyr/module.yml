@@ -3,6 +3,8 @@
 # Give your module a name
 name: zmk-battery-led-indicator
 build:
+  depends:
+    - zmk
   # List your dependencies
   # depends:
   #  - zmk-example-dependency
