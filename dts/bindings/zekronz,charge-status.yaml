@@ -1,0 +1,12 @@
+description: Charger status pins
+
+compatible: "zekronz,charge-status"
+
+properties:
+  stat1:
+    type: phandle-array
+    required: true
+
+  stat2:
+    type: phandle-array
+    required: true
