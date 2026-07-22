@@ -27,6 +27,10 @@ static bool stat1_enabled = false;
 static bool stat2_enabled = false;
 
 static void update_charge_status(void){
+	gpio_pin_set_dt(&led_red, 1);
+	gpio_pin_set_dt(&led_green, 1);
+
+	/*x
 	bool usb_power = zmk_usb_is_powered();
 
 	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_power;
@@ -41,7 +45,7 @@ static void update_charge_status(void){
 	}else{
 		gpio_pin_set_dt(&led_green, 0);
 		gpio_pin_set_dt(&led_red, 1);
-	}
+	}*/
 }
 
 static int usb_cb(const zmk_event_t *eh){
