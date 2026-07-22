@@ -3,7 +3,7 @@
 #include <zephyr/device.h>
 
 //#include <zmk/events/battery_state_changed.h>
-#inlcude <zmk/usb.h>
+#include <zmk/usb.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(red_led)), "Node 'red_led' not found.");
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(green_led)), "Node 'green_led' not found.");
