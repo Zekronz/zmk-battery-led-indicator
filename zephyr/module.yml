@@ -1,7 +1,7 @@
 # Delete all unused properties.
 
 # Give your module a name
-name: zmk-feature-battery_led_indicator
+name: zmk-battery-led-indicator
 build:
   # List your dependencies
   # depends:
