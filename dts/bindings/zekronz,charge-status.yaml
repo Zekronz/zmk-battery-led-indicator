@@ -3,10 +3,10 @@ description: Charger status pins
 compatible: "zekronz,charge-status"
 
 properties:
-  stat1:
+  stat1-gpios:
     type: phandle-array
     required: true
 
-  stat2:
+  stat2-gpios:
     type: phandle-array
     required: true
