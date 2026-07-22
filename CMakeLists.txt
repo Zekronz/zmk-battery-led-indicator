@@ -1,6 +1,7 @@
 zephyr_library()
 
-zephyr_library_sources(
+zephyr_library_sources_ifdef(
+	ZMK_BATTERY_LED_INDICATOR
     src/module.c
 )
 
