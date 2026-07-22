@@ -39,8 +39,8 @@ static void update_charge_status(void){
 		gpio_pin_set_dt(&led_red, 1);
 		gpio_pin_set_dt(&led_green, 1);
 	}else{
-		gpio_pin_set_dt(&led_red, 1);
 		gpio_pin_set_dt(&led_green, 0);
+		gpio_pin_set_dt(&led_red, 1);
 	}
 }
 
