@@ -35,7 +35,7 @@ static void bat_led_work_handler(struct k_work *work){
 
 	led_state = !led_state;
 
-	k_work_schedule(&led_work, K_SECONDS(1));
+	k_work_reschedule(&led_work, K_SECONDS(1));
 }
 
 static int bat_led_init(void){

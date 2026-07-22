@@ -1,9 +1,8 @@
 zephyr_library()
 
-zephyr_library_sources_ifdef(
-	ZMK_BATTERY_LED_INDICATOR
-    src/module.c
-)
+if(CONFIG_ZMK_BATTERY_LED_INDICATOR)
+	zephyr_library_sources(src/module.c)
+endif()
 
 if(DEFINED ZMK_MODULE_DIR)
     zephyr_library_include_directories(${ZMK_MODULE_DIR}/app/include)
