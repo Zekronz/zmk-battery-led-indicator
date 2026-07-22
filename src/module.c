@@ -46,6 +46,7 @@ static void update_charge_status(void){
 
 static int usb_cb(const zmk_event_t *eh){
 	update_charge_status();
+	return ZMK_EV_EVENT_HANDLED;
 }
 
 static void bat_led_work_handler(struct k_work *work){
