@@ -25,11 +25,11 @@ static bool stat2_enabled = false;
 static void update_charge_status(int s1, int s2){
 	if(s1 < 0 || s2 < 0) return;
 
-	stat1_enabled = s1;
-	stat2_enabled = s2;
+	stat1_enabled = !s1;
+	stat2_enabled = !s2;
 
-	gpio_pin_set_dt(&led_red, s1);
-	gpio_pin_set_dt(&led_green, s2);
+	gpio_pin_set_dt(&led_red, stat1_enabled);
+	gpio_pin_set_dt(&led_green, stat2_enabled);
 }
 
 static void bat_led_work_handler(struct k_work *work){
