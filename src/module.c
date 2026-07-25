@@ -84,7 +84,8 @@ static void cb_stat_bat_work(struct k_work *work){
 }
 
 static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
-	k_work_reschedule(&cb_stat_bat_work, K_MSEC(10));
+	int ret = k_work_reschedule(&cb_stat_bat_work, K_MSEC(10));
+	if(ret < 0){ LOG_INF("[cb_stat_pins] cb_stat_bat_work reschedule returned %d", ret); return; }
 }
 
 static void cb_init_bat_work(struct k_work *work){
@@ -148,12 +149,12 @@ static void cb_init_bat_work(struct k_work *work){
 }
 
 static int bat_led_init(void){
-	k_work_init_delayable(&init_bat_work, init_bat);
-	k_work_init_delayable(&stat_bat_work, stat_bat);
+	k_work_init_delayable(&init_bat_work, cb_init_bat_work);
+	k_work_init_delayable(&stat_bat_work, cb_stat_bat_work);
 
 	int ret;
 	ret = k_work_schedule(&cb_init_bat_work, K_MSEC(200));
-	if(ret < 0){ LOG_INF("init_bar_work schedule returned %d", ret); return; }
+	if(ret < 0){ LOG_INF("cb_init_bar_work schedule returned %d", ret); return; }
 
     return 0;
 }
