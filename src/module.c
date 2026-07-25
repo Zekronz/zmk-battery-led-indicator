@@ -127,7 +127,7 @@ static int bat_led_init(void){
     return 0;
 }
 
-ZMK_LISTENER(usb_state_listener, usb_cb);
-ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
+//ZMK_LISTENER(usb_state_listener, usb_cb);
+//ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
-SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+//SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
