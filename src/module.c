@@ -50,7 +50,8 @@ static int usb_cb(const zmk_event_t *eh){
 }
 
 static void bat_led_work_handler(struct k_work *work){
-	int s1 = gpio_pin_get_dt(&stat1_pin);
+	printk("Test print");
+	/*int s1 = gpio_pin_get_dt(&stat1_pin);
 	int s2 = gpio_pin_get_dt(&stat2_pin);
 
 	if(s1 < 0 || s2 < 0) return;
@@ -58,7 +59,7 @@ static void bat_led_work_handler(struct k_work *work){
 	stat1_enabled = s1;
 	stat2_enabled = s2;
 
-	update_charge_status();
+	update_charge_status();*/
 
 	//k_work_reschedule(&led_work, K_SECONDS(1));
 	
@@ -70,14 +71,15 @@ static void stat_cb(const struct device *dev, struct gpio_callback *cb, uint32_t
 }
 
 static int bat_led_init(void){
-	k_msleep(1000);
-	printk("Test print");
+	k_work_init_delayable(&led_work, bat_led_work_handler);
+	k_work_schedule(&led_work, K_MSEC(1000));
+
     if(!device_is_ready(led_red.port)) return -ENODEV;
     if(!device_is_ready(led_green.port)) return -ENODEV;
 	if(!device_is_ready(stat1_pin.port)) return -ENODEV;
 	if(!device_is_ready(stat2_pin.port)) return -ENODEV;
 
-	/*k_work_init_delayable(&led_work, bat_led_work_handler);
+	/*
 
 	int ret;
 
