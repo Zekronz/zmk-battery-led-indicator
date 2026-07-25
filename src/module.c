@@ -78,7 +78,7 @@ static void stat_cb(const struct device *dev, struct gpio_callback *cb, uint32_t
 static int bat_led_init(void){
 	LOG_INF("Test print 2");
 	k_work_init_delayable(&led_work, bat_led_work_handler);
-	k_work_schedule(&led_work, K_MSEC(2000));
+	k_work_schedule(&led_work, K_MSEC(10000));
 
     /*if(!device_is_ready(led_red.port)) return -ENODEV;
     if(!device_is_ready(led_green.port)) return -ENODEV;
