@@ -70,6 +70,7 @@ static void stat_cb(const struct device *dev, struct gpio_callback *cb, uint32_t
 }
 
 static int bat_led_init(void){
+	k_msleep(1000);
 	printk("Test print");
     if(!device_is_ready(led_red.port)) return -ENODEV;
     if(!device_is_ready(led_green.port)) return -ENODEV;
