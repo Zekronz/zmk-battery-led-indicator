@@ -70,12 +70,13 @@ static void stat_cb(const struct device *dev, struct gpio_callback *cb, uint32_t
 }
 
 static int bat_led_init(void){
+	printk("Test print");
     if(!device_is_ready(led_red.port)) return -ENODEV;
     if(!device_is_ready(led_green.port)) return -ENODEV;
 	if(!device_is_ready(stat1_pin.port)) return -ENODEV;
 	if(!device_is_ready(stat2_pin.port)) return -ENODEV;
 
-	k_work_init_delayable(&led_work, bat_led_work_handler);
+	/*k_work_init_delayable(&led_work, bat_led_work_handler);
 
 	int ret;
 
@@ -122,7 +123,7 @@ static int bat_led_init(void){
 		if(ret < 0) return ret;
 	}
 
-	update_charge_status();
+	update_charge_status();*/
 
     return 0;
 }
@@ -130,4 +131,4 @@ static int bat_led_init(void){
 //ZMK_LISTENER(usb_state_listener, usb_cb);
 //ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
-//SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
