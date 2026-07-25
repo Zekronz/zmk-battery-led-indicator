@@ -76,7 +76,7 @@ extern void led_init_thread(void *d0, void *d1, void *d2) {
 
 	gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
 	gpio_pin_set_dt(&led_red, 1);
-	LOG_INF("Test print");
+	printk("Test print\n");
 
 }
 
