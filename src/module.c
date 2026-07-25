@@ -68,10 +68,6 @@ static int cb_usb(const zmk_event_t *eh){
 	return ZMK_EV_EVENT_HANDLED;
 }
 
-static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
-	k_work_reschedule(&cb_stat_bat_work, K_MSEC(10));
-}
-
 static void cb_stat_bat_work(struct k_work *work){
 	LOG_INF("stat callback triggered");
 
@@ -85,6 +81,10 @@ static void cb_stat_bat_work(struct k_work *work){
 	stat2_enabled = s2;
 
 	update_charge_status();
+}
+
+static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
+	k_work_reschedule(&cb_stat_bat_work, K_MSEC(10));
 }
 
 static void cb_init_bat_work(struct k_work *work){
