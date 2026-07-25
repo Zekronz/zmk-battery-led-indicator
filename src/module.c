@@ -63,16 +63,16 @@ static void update_charge_status(void){
 	}
 }
 
-static int usb_cb(const zmk_event_t *eh){
+static int cb_usb(const zmk_event_t *eh){
 	update_charge_status();
 	return ZMK_EV_EVENT_HANDLED;
 }
 
-static void stat_cb(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
-	k_work_reschedule(&stat_bat_work, K_MSEC(10));
+static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
+	k_work_reschedule(&cb_stat_bat_work, K_MSEC(10));
 }
 
-static void stat_bat_work(struct k_work *work){
+static void cb_stat_bat_work(struct k_work *work){
 	LOG_INF("stat callback triggered");
 
 	int s1 = gpio_pin_get_dt(&stat1_pin);
@@ -87,7 +87,7 @@ static void stat_bat_work(struct k_work *work){
 	update_charge_status();
 }
 
-static void init_bat_work(struct k_work *work){
+static void cb_init_bat_work(struct k_work *work){
 	LOG_INF("\n");
 	//@TODO: zekronz,charge-status
 	//@TODO: Handle sleep
@@ -127,13 +127,13 @@ static void init_bat_work(struct k_work *work){
 	if(ret < 0){ LOG_INF("Configuring interrupt for stat2_pin returned %d", ret); return; }
 
 	if(stat1_pin.port == stat2_pin.port){
-		gpio_init_callback(&stat1_cb_data, stat_cb, BIT(stat1_pin.pin) | BIT(stat2_pin.pin));
+		gpio_init_callback(&stat1_cb_data, cb_stat_pins, BIT(stat1_pin.pin) | BIT(stat2_pin.pin));
 
 		ret = gpio_add_callback(stat1_pin.port, &stat1_cb_data);
 		if(ret < 0){ LOG_INF("(0) Adding callback for stat1 returned %d", ret); return; }
 	}else {
-		gpio_init_callback(&stat1_cb_data, stat_cb, BIT(stat1_pin.pin));
-		gpio_init_callback(&stat2_cb_data, stat_cb, BIT(stat2_pin.pin));
+		gpio_init_callback(&stat1_cb_data, cb_stat_pins, BIT(stat1_pin.pin));
+		gpio_init_callback(&stat2_cb_data, cb_stat_pins, BIT(stat2_pin.pin));
 
 		ret = gpio_add_callback(stat1_pin.port, &stat1_cb_data);
 		if(ret < 0){ LOG_INF("(1) Adding callback for stat1 returned %d", ret); return; }
@@ -152,13 +152,13 @@ static int bat_led_init(void){
 	k_work_init_delayable(&stat_bat_work, stat_bat);
 
 	int ret;
-	ret = k_work_schedule(&init_bat_work, K_MSEC(200));
+	ret = k_work_schedule(&cb_init_bat_work, K_MSEC(200));
 	if(ret < 0){ LOG_INF("init_bar_work schedule returned %d", ret); return; }
 
     return 0;
 }
 
-ZMK_LISTENER(usb_state_listener, usb_cb);
+ZMK_LISTENER(usb_state_listener, cb_usb);
 ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
 SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
