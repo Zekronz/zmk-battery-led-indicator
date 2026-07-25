@@ -84,7 +84,7 @@ static void cb_stat_bat_work(struct k_work *work){
 }
 
 static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
-	int ret = k_work_reschedule(&cb_stat_bat_work, K_MSEC(10));
+	int ret = k_work_reschedule(&stat_bat_work, K_MSEC(10));
 	if(ret < 0){ LOG_INF("[cb_stat_pins] cb_stat_bat_work reschedule returned %d", ret); return; }
 }
 
@@ -96,7 +96,7 @@ static void cb_init_bat_work(struct k_work *work){
 	if(!device_is_ready(led_red.port)){ LOG_INF("NOT READY: led_red"); return; }
     if(!device_is_ready(led_green.port)){ LOG_INF("NOT READY: led_green"); return; }
 	if(!device_is_ready(stat1_pin.port)){ LOG_INF("NOT READY: stat1_pin"); return; }
-	if(!device_is_ready(stat2_pin.port)){ LOG_INF("NOT READY: stat2_pin"); return; };
+	if(!device_is_ready(stat2_pin.port)){ LOG_INF("NOT READY: stat2_pin"); return; }
 
 	int ret;
 
@@ -153,7 +153,7 @@ static int bat_led_init(void){
 	k_work_init_delayable(&stat_bat_work, cb_stat_bat_work);
 
 	int ret;
-	ret = k_work_schedule(&cb_init_bat_work, K_MSEC(200));
+	ret = k_work_schedule(&init_bat_work, K_MSEC(200));
 	if(ret < 0){ LOG_INF("cb_init_bar_work schedule returned %d", ret); return; }
 
     return 0;
