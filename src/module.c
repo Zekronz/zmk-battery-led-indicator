@@ -1,11 +1,14 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 //#include <zmk/events/battery_state_changed.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/usb_conn_state_changed.h>
 #include <zmk/usb.h>
+
+LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(red_led)), "Node 'red_led' not found.");
 BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(green_led)), "Node 'green_led' not found.");
@@ -50,7 +53,7 @@ static int usb_cb(const zmk_event_t *eh){
 }
 
 static void bat_led_work_handler(struct k_work *work){
-	printk("Test print\n");
+	LOG_INF("Test print");
 	/*int s1 = gpio_pin_get_dt(&stat1_pin);
 	int s2 = gpio_pin_get_dt(&stat2_pin);
 
@@ -71,6 +74,7 @@ static void stat_cb(const struct device *dev, struct gpio_callback *cb, uint32_t
 }
 
 static int bat_led_init(void){
+	LOG_INF("Test print 2");
 	k_work_init_delayable(&led_work, bat_led_work_handler);
 	k_work_schedule(&led_work, K_MSEC(2000));
 
