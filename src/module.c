@@ -53,6 +53,8 @@ static int usb_cb(const zmk_event_t *eh){
 }
 
 static void bat_led_work_handler(struct k_work *work){
+	gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
+	gpio_pin_set_dt(&led_red, 1);
 	LOG_INF("Test print");
 	/*int s1 = gpio_pin_get_dt(&stat1_pin);
 	int s2 = gpio_pin_get_dt(&stat2_pin);
