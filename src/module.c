@@ -53,9 +53,7 @@ static int usb_cb(const zmk_event_t *eh){
 }
 
 static void bat_led_work_handler(struct k_work *work){
-	gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
-	gpio_pin_set_dt(&led_red, 1);
-	LOG_INF("Test print");
+	
 	/*int s1 = gpio_pin_get_dt(&stat1_pin);
 	int s2 = gpio_pin_get_dt(&stat2_pin);
 
@@ -69,6 +67,17 @@ static void bat_led_work_handler(struct k_work *work){
 	//k_work_reschedule(&led_work, K_SECONDS(1));
 	
 	//@TODO: Handle sleep
+}
+
+extern void led_init_thread(void *d0, void *d1, void *d2) {
+    ARG_UNUSED(d0);
+    ARG_UNUSED(d1);
+    ARG_UNUSED(d2);
+	
+	gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
+	gpio_pin_set_dt(&led_red, 1);
+	LOG_INF("Test print");
+
 }
 
 static void stat_cb(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
@@ -140,4 +149,5 @@ static int bat_led_init(void){
 //ZMK_LISTENER(usb_state_listener, usb_cb);
 //ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
-SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+K_THREAD_DEFINE(led_init_tid, 1024, bat_led_init, NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, 8000);
+//SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
