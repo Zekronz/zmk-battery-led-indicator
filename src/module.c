@@ -37,7 +37,7 @@ static void update_charge_status(void){
 	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_power;
 	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_power;
 
-	if(is_charging){
+	/*if(is_charging){
 		int r1 = gpio_pin_set_dt(&led_red, 0);
 		int r2 = gpio_pin_set_dt(&led_green, 1);
 
@@ -61,7 +61,7 @@ static void update_charge_status(void){
 			LOG_INF("other returned %d, %d", r1, r2);
 			return;
 		}
-	}
+	}*/
 }
 
 static int cb_usb(const zmk_event_t *eh){
@@ -71,7 +71,17 @@ static int cb_usb(const zmk_event_t *eh){
 
 static int cb_activity(const zmk_event_t *eh){
 	struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
-	LOG_INF("\nevent: %d", (int)a->state);
+	if(a->state == ZMK_ACTIVITY_ACTIVE){
+		gpio_pin_set_dt(&led_red, 0);
+		gpio_pin_set_dt(&led_green, 1);
+	}else if(a->state == ZMK_ACTIVITY_IDLE){
+		gpio_pin_set_dt(&led_red, 1);
+		gpio_pin_set_dt(&led_green, 0);
+	}else{
+		gpio_pin_set_dt(&led_red, 1);
+		gpio_pin_set_dt(&led_green, 1);
+	}
+
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
