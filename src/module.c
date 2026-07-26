@@ -24,10 +24,10 @@ static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(DT_NODELABEL(green
 static const struct gpio_dt_spec stat1_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat1_gpios);
 static const struct gpio_dt_spec stat2_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat2_gpios);
 
-//static struct k_mutex mutex;
+static struct k_mutex mutex;
 
 static struct k_work_delayable init_bat_work;
-/*static struct k_work_delayable stat_bat_work;
+static struct k_work_delayable stat_bat_work;
 static struct k_work_delayable update_leds_work;
 static struct gpio_callback stat1_cb_data;
 static struct gpio_callback stat2_cb_data;
@@ -36,7 +36,7 @@ static volatile bool initialized = false;
 static volatile bool stat1_enabled = false;
 static volatile bool stat2_enabled = false;
 static volatile bool is_active = true;
-static volatile uint8_t bat_level = 100;*/
+static volatile uint8_t bat_level = 100;
 
 /*static void cb_update_leds_work(struct k_work *work){
 	//k_mutex_lock(&mutex, K_FOREVER);
@@ -233,11 +233,11 @@ fail:
 }
 
 static int bat_led_init(void){
-	//k_mutex_init(&mutex);
+	k_mutex_init(&mutex);
 
 	k_work_init_delayable(&init_bat_work, cb_init_bat_work);
-	//k_work_init_delayable(&stat_bat_work, cb_stat_bat_work);
-	//k_work_init_delayable(&update_leds_work, cb_update_leds_work);
+	k_work_init_delayable(&stat_bat_work, cb_stat_bat_work);
+	k_work_init_delayable(&update_leds_work, cb_update_leds_work);
 
 	int ret;
 	ret = k_work_schedule(&init_bat_work, K_MSEC(200));
