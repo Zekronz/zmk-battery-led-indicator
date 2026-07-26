@@ -38,10 +38,10 @@ static volatile bool stat2_enabled = false;
 static volatile bool is_active = true;
 static volatile uint8_t bat_level = 100;
 
-/*static void cb_update_leds_work(struct k_work *work){
+static void cb_update_leds_work(struct k_work *work){
 	//k_mutex_lock(&mutex, K_FOREVER);
 
-	if(!initialized){
+	/*if(!initialized){
 		//k_mutex_unlock(&mutex);
 		return;
 	}
@@ -80,9 +80,9 @@ static volatile uint8_t bat_level = 100;
 	}
 
 	gpio_pin_set_dt(&led_red, 0);
-	gpio_pin_set_dt(&led_green, 0);
+	gpio_pin_set_dt(&led_green, 0);*/
 }
-
+/*
 static int cb_usb(const zmk_event_t *eh){
 	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 	return ZMK_EV_EVENT_BUBBLE;
@@ -133,10 +133,10 @@ static int cb_bat(const zmk_event_t *eh){
 
 	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 	return ZMK_EV_EVENT_BUBBLE;
-}
+}*/
 
 static void cb_stat_bat_work(struct k_work *work){
-	LOG_DBG("stat callback triggered");
+	/*LOG_DBG("stat callback triggered");
 
 	int s1 = gpio_pin_get_dt(&stat1_pin);
 	int s2 = gpio_pin_get_dt(&stat2_pin);
@@ -151,10 +151,10 @@ static void cb_stat_bat_work(struct k_work *work){
 	stat2_enabled = s2;
 	//k_mutex_unlock(&mutex);
 	
-	k_work_reschedule(&update_leds_work, K_NO_WAIT);
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);*/
 }
 
-static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
+/*static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
 	k_work_reschedule(&stat_bat_work, K_MSEC(20));
 }*/
 
