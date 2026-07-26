@@ -39,10 +39,10 @@ static volatile bool is_active = true;
 static volatile uint8_t bat_level = 100;
 
 static void cb_update_leds_work(struct k_work *work){
-	//k_mutex_lock(&mutex, K_FOREVER);
+	k_mutex_lock(&mutex, K_FOREVER);
 
-	/*if(!initialized){
-		//k_mutex_unlock(&mutex);
+	if(!initialized){
+		k_mutex_unlock(&mutex);
 		return;
 	}
 
@@ -53,7 +53,7 @@ static void cb_update_leds_work(struct k_work *work){
 	bool low_battery = (bat_level <= 10);
 	bool active = is_active;
 
-	//k_mutex_unlock(&mutex);
+	k_mutex_unlock(&mutex);
 
 	if(!active && !usb_power){
 		gpio_pin_set_dt(&led_red, 0);
@@ -80,26 +80,26 @@ static void cb_update_leds_work(struct k_work *work){
 	}
 
 	gpio_pin_set_dt(&led_red, 0);
-	gpio_pin_set_dt(&led_green, 0);*/
+	gpio_pin_set_dt(&led_green, 0);
 }
 
 static int cb_usb(const zmk_event_t *eh){
-	//_work_reschedule(&update_leds_work, K_NO_WAIT);
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static int cb_activity(const zmk_event_t *eh){
-	//k_mutex_lock(&mutex, K_FOREVER);
+	k_mutex_lock(&mutex, K_FOREVER);
 
-	/*const struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
+	const struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
 	if(a == NULL){
-		//k_mutex_unlock(&mutex);
+		k_mutex_unlock(&mutex);
 		return ZMK_EV_EVENT_BUBBLE;
 	}
 
 	bool active = (a->state == ZMK_ACTIVITY_ACTIVE);
 	if(active == is_active){
-		//k_mutex_unlock(&mutex);
+		k_mutex_unlock(&mutex);
 		return ZMK_EV_EVENT_BUBBLE;
 	}
 
@@ -108,35 +108,35 @@ static int cb_activity(const zmk_event_t *eh){
 	if(is_active){
 		bat_level = zmk_battery_state_of_charge();
 
-		//k_mutex_unlock(&mutex);
+		k_mutex_unlock(&mutex);
 		k_work_reschedule(&stat_bat_work, K_NO_WAIT);
 	}else{
 
-		//k_mutex_unlock(&mutex);
+		k_mutex_unlock(&mutex);
 		k_work_reschedule(&update_leds_work, K_NO_WAIT);
-	}*/
+	}
 
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static int cb_bat(const zmk_event_t *eh){
-	//k_mutex_lock(&mutex, K_FOREVER);
+	k_mutex_lock(&mutex, K_FOREVER);
 
-	/*const struct zmk_battery_state_changed *b = as_zmk_battery_state_changed(eh);
+	const struct zmk_battery_state_changed *b = as_zmk_battery_state_changed(eh);
 	if(b == NULL){
-		//k_mutex_unlock(&mutex);
+		k_mutex_unlock(&mutex);
 		return ZMK_EV_EVENT_BUBBLE;
 	}
 
 	bat_level = b->state_of_charge;
-	//k_mutex_unlock(&mutex);
+	k_mutex_unlock(&mutex);
 
-	k_work_reschedule(&update_leds_work, K_NO_WAIT);*/
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static void cb_stat_bat_work(struct k_work *work){
-	/*LOG_DBG("stat callback triggered");
+	LOG_DBG("stat callback triggered");
 
 	int s1 = gpio_pin_get_dt(&stat1_pin);
 	int s2 = gpio_pin_get_dt(&stat2_pin);
@@ -146,27 +146,22 @@ static void cb_stat_bat_work(struct k_work *work){
 		return;
 	}
 	
-	//k_mutex_lock(&mutex, K_FOREVER);
+	k_mutex_lock(&mutex, K_FOREVER);
 	stat1_enabled = s1;
 	stat2_enabled = s2;
-	//k_mutex_unlock(&mutex);
+	k_mutex_unlock(&mutex);
 	
-	k_work_reschedule(&update_leds_work, K_NO_WAIT);*/
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 }
 
-/*static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
+static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
 	k_work_reschedule(&stat_bat_work, K_MSEC(20));
-}*/
+}
 
 static void cb_init_bat_work(struct k_work *work){
-    gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
-    gpio_pin_configure_dt(&led_green, GPIO_OUTPUT_INACTIVE);
-	gpio_pin_set_dt(&led_red, 1);
-	gpio_pin_set_dt(&led_green, 1);
+	k_mutex_lock(&mutex, K_FOREVER);
 
-	//k_mutex_lock(&mutex, K_FOREVER);
-
-	/*if(!device_is_ready(led_red.port)){ LOG_DBG("NOT READY: led_red"); goto fail; }
+	if(!device_is_ready(led_red.port)){ LOG_DBG("NOT READY: led_red"); goto fail; }
     if(!device_is_ready(led_green.port)){ LOG_DBG("NOT READY: led_green"); goto fail; }
 	if(!device_is_ready(stat1_pin.port)){ LOG_DBG("NOT READY: stat1_pin"); goto fail; }
 	if(!device_is_ready(stat2_pin.port)){ LOG_DBG("NOT READY: stat2_pin"); goto fail; }
@@ -220,16 +215,16 @@ static void cb_init_bat_work(struct k_work *work){
 
 	initialized = true;
 
-	//k_mutex_unlock(&mutex);
+	k_mutex_unlock(&mutex);
 	
-	//k_work_reschedule(&update_leds_work, K_NO_WAIT);
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 
 	LOG_DBG("Initialized battery led indicator.");
 	return;
 
 fail:
-	//k_mutex_unlock(&mutex);
-	return;*/
+	k_mutex_unlock(&mutex);
+	return;
 }
 
 static int bat_led_init(void){
