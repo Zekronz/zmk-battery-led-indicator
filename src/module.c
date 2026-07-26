@@ -83,10 +83,10 @@ static int cb_activity(const zmk_event_t *eh){
 
 	if(is_active){
 		int s1 = gpio_pin_get_dt(&stat1_pin);
-		if(s1 < 0){ LOG_INF("[cb_activity] Reading stat1_pin returned %d", s1); return; }
+		if(s1 < 0){ LOG_INF("[cb_activity] Reading stat1_pin returned %d", s1); return ZMK_EV_EVENT_BUBBLE; }
 
 		int s2 = gpio_pin_get_dt(&stat2_pin);
-		if(s2 < 0){ LOG_INF("[cb_activity] Reading stat2_pin returned %d", s2); return; }
+		if(s2 < 0){ LOG_INF("[cb_activity] Reading stat2_pin returned %d", s2); return ZMK_EV_EVENT_BUBBLE; }
 
 		stat1_enabled = s1;
 		stat2_enabled = s2;
@@ -208,7 +208,7 @@ static int bat_led_init(void){
 
 	int ret;
 	ret = k_work_schedule(&init_bat_work, K_MSEC(200));
-	if(ret < 0){ LOG_INF("cb_init_bar_work schedule returned %d", ret); return; }
+	if(ret < 0){ LOG_INF("cb_init_bar_work schedule returned %d", ret); return 0; }
 
     return 0;
 }
