@@ -3,10 +3,11 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
-//#include <zmk/events/battery_state_changed.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/usb_conn_state_changed.h>
 #include <zmk/events/activity_state_changed.h>
+#include <zmk/events/battery_state_changed.h>
+#include <zmk/battery.h>
 #include <zmk/usb.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -30,58 +31,78 @@ static struct gpio_callback stat2_cb_data;
 
 static bool stat1_enabled = false;
 static bool stat2_enabled = false;
+static bool is_active = true;
+static uint8_t bat_level = 100;
 
-static void update_charge_status(void){
+static void update_leds(void){
+	if(!is_active){
+		gpio_pin_set_dt(&led_red, 0);
+		gpio_pin_set_dt(&led_green, 0);
+		return;
+	}
+
 	bool usb_power = zmk_usb_is_powered();
 
 	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_power;
 	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_power;
 
-	/*if(is_charging){
-		int r1 = gpio_pin_set_dt(&led_red, 0);
-		int r2 = gpio_pin_set_dt(&led_green, 1);
+	if(finished_charging){
+		gpio_pin_set_dt(&led_red, 0);
+		gpio_pin_set_dt(&led_green, 1);
+		return;
+	}
 
-		if(r1 < 0 || r2 < 0){
-			LOG_INF("is_charging returned %d, %d", r1, r2);
-			return;
-		}
-	}else if(finished_charging){
-		int r1 = gpio_pin_set_dt(&led_red, 1);
-		int r2 = gpio_pin_set_dt(&led_green, 1);
+	if(is_charging){
+		gpio_pin_set_dt(&led_red, 1); //@TODO: PWM
+		gpio_pin_set_dt(&led_green, 1);
+		return;
+	}
 
-		if(r1 < 0 || r2 < 0){
-			LOG_INF("finished_charging returned %d, %d", r1, r2);
-			return;
-		}
-	}else{
-		int r1 = gpio_pin_set_dt(&led_green, 0);
-		int r2 = gpio_pin_set_dt(&led_red, 1);
+	if(bat_level <= 10){
+		gpio_pin_set_dt(&led_red, 1);
+		gpio_pin_set_dt(&led_green, 0);
+		return;
+	}
 
-		if(r1 < 0 || r2 < 0){
-			LOG_INF("other returned %d, %d", r1, r2);
-			return;
-		}
-	}*/
+	gpio_pin_set_dt(&led_red, 0);
+	gpio_pin_set_dt(&led_green, 0);
 }
 
 static int cb_usb(const zmk_event_t *eh){
-	update_charge_status();
+	update_leds();
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static int cb_activity(const zmk_event_t *eh){
 	struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
-	if(a->state == ZMK_ACTIVITY_ACTIVE){
-		gpio_pin_set_dt(&led_red, 0);
-		gpio_pin_set_dt(&led_green, 1);
-	}else if(a->state == ZMK_ACTIVITY_IDLE){
-		gpio_pin_set_dt(&led_red, 1);
-		gpio_pin_set_dt(&led_green, 0);
-	}else{
-		gpio_pin_set_dt(&led_red, 1);
-		gpio_pin_set_dt(&led_green, 1);
+
+	bool active = (a->state == ZMK_ACTIVITY_ACTIVE);
+	if(active == is_active) return ZMK_EV_EVENT_BUBBLE;
+
+	is_active = active;
+
+	if(is_active){
+		int s1 = gpio_pin_get_dt(&stat1_pin);
+		if(s1 < 0){ LOG_INF("[cb_activity] Reading stat1_pin returned %d", s1); return; }
+
+		int s2 = gpio_pin_get_dt(&stat2_pin);
+		if(s2 < 0){ LOG_INF("[cb_activity] Reading stat2_pin returned %d", s2); return; }
+
+		stat1_enabled = s1;
+		stat2_enabled = s2;
+
+		bat_level = zmk_battery_state_of_charge();
 	}
 
+	update_leds();
+
+	return ZMK_EV_EVENT_BUBBLE;
+}
+
+static int cb_bat(const zmk_event_t *eh){
+	struct zmk_battery_state_changed *b = as_zmk_battery_state_changed(eh);
+	bat_level = b->state_of_charge;
+	update_leds();
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
@@ -97,7 +118,7 @@ static void cb_stat_bat_work(struct k_work *work){
 	stat1_enabled = s1;
 	stat2_enabled = s2;
 
-	update_charge_status();
+	update_leds();
 }
 
 static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
@@ -107,8 +128,22 @@ static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uin
 
 static void cb_init_bat_work(struct k_work *work){
 	LOG_INF("\n");
-	//@TODO: zekronz,charge-status
 	//@TODO: Handle sleep
+	
+	/*
+		LED states:
+			-Charging.
+			-Finished charging.
+			-Low battery.
+			-Error state?
+
+		Update LED state:
+			-Stat pins change.
+			-Usb connect/disconnect.
+			-Battery state.
+			-Activity state changes.
+
+	*/
 
 	if(!device_is_ready(led_red.port)){ LOG_INF("NOT READY: led_red"); return; }
     if(!device_is_ready(led_green.port)){ LOG_INF("NOT READY: led_green"); return; }
@@ -160,7 +195,9 @@ static void cb_init_bat_work(struct k_work *work){
 		if(ret < 0){ LOG_INF("(1) Adding callback for stat2 returned %d", ret); return; }
 	}
 
-	update_charge_status();
+	bat_level = zmk_battery_state_of_charge();
+
+	update_leds();
 
 	LOG_INF("Initialized battery led indicator.");
 }
@@ -180,6 +217,9 @@ ZMK_LISTENER(usb_state_listener, cb_usb);
 ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
 ZMK_LISTENER(activity_state_listener, cb_activity);
-ZMK_SUBSCRIPTION(activity_state_listener, zmk_activity_state_changed );
+ZMK_SUBSCRIPTION(activity_state_listener, zmk_activity_state_changed);
+
+ZMK_LISTENER(battery_state_listener, cb_bat);
+ZMK_SUBSCRIPTION(battery_state_listener, zmk_battery_state_changed);
 
 SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
