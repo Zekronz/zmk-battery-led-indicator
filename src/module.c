@@ -252,7 +252,7 @@ ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 ZMK_LISTENER(activity_state_listener, cb_activity);
 ZMK_SUBSCRIPTION(activity_state_listener, zmk_activity_state_changed);
 
-//ZMK_LISTENER(battery_state_listener, cb_bat);
-//ZMK_SUBSCRIPTION(battery_state_listener, zmk_battery_state_changed);
+ZMK_LISTENER(battery_state_listener, cb_bat);
+ZMK_SUBSCRIPTION(battery_state_listener, zmk_battery_state_changed);
 
 SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
