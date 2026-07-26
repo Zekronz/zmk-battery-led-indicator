@@ -82,16 +82,16 @@ static void cb_update_leds_work(struct k_work *work){
 	gpio_pin_set_dt(&led_red, 0);
 	gpio_pin_set_dt(&led_green, 0);*/
 }
-/*
+
 static int cb_usb(const zmk_event_t *eh){
-	k_work_reschedule(&update_leds_work, K_NO_WAIT);
+	//_work_reschedule(&update_leds_work, K_NO_WAIT);
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static int cb_activity(const zmk_event_t *eh){
 	//k_mutex_lock(&mutex, K_FOREVER);
 
-	const struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
+	/*const struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
 	if(a == NULL){
 		//k_mutex_unlock(&mutex);
 		return ZMK_EV_EVENT_BUBBLE;
@@ -114,7 +114,7 @@ static int cb_activity(const zmk_event_t *eh){
 
 		//k_mutex_unlock(&mutex);
 		k_work_reschedule(&update_leds_work, K_NO_WAIT);
-	}
+	}*/
 
 	return ZMK_EV_EVENT_BUBBLE;
 }
@@ -122,7 +122,7 @@ static int cb_activity(const zmk_event_t *eh){
 static int cb_bat(const zmk_event_t *eh){
 	//k_mutex_lock(&mutex, K_FOREVER);
 
-	const struct zmk_battery_state_changed *b = as_zmk_battery_state_changed(eh);
+	/*const struct zmk_battery_state_changed *b = as_zmk_battery_state_changed(eh);
 	if(b == NULL){
 		//k_mutex_unlock(&mutex);
 		return ZMK_EV_EVENT_BUBBLE;
@@ -131,9 +131,9 @@ static int cb_bat(const zmk_event_t *eh){
 	bat_level = b->state_of_charge;
 	//k_mutex_unlock(&mutex);
 
-	k_work_reschedule(&update_leds_work, K_NO_WAIT);
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);*/
 	return ZMK_EV_EVENT_BUBBLE;
-}*/
+}
 
 static void cb_stat_bat_work(struct k_work *work){
 	/*LOG_DBG("stat callback triggered");
@@ -246,7 +246,7 @@ static int bat_led_init(void){
     return 0;
 }
 
-/*ZMK_LISTENER(usb_state_listener, cb_usb);
+ZMK_LISTENER(usb_state_listener, cb_usb);
 ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
 ZMK_LISTENER(activity_state_listener, cb_activity);
@@ -254,5 +254,5 @@ ZMK_SUBSCRIPTION(activity_state_listener, zmk_activity_state_changed);
 
 ZMK_LISTENER(battery_state_listener, cb_bat);
 ZMK_SUBSCRIPTION(battery_state_listener, zmk_battery_state_changed);
-*/
+
 SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
