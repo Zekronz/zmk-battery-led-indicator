@@ -159,9 +159,14 @@ static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uin
 }
 
 static void cb_init_bat_work(struct k_work *work){
+    gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
+    gpio_pin_configure_dt(&led_green, GPIO_OUTPUT_INACTIVE);
+	gpio_pin_set_dt(&led_red, 1);
+	gpio_pin_set_dt(&led_green, 1);
+
 	//k_mutex_lock(&mutex, K_FOREVER);
 
-	if(!device_is_ready(led_red.port)){ LOG_DBG("NOT READY: led_red"); goto fail; }
+	/*if(!device_is_ready(led_red.port)){ LOG_DBG("NOT READY: led_red"); goto fail; }
     if(!device_is_ready(led_green.port)){ LOG_DBG("NOT READY: led_green"); goto fail; }
 	if(!device_is_ready(stat1_pin.port)){ LOG_DBG("NOT READY: stat1_pin"); goto fail; }
 	if(!device_is_ready(stat2_pin.port)){ LOG_DBG("NOT READY: stat2_pin"); goto fail; }
@@ -216,7 +221,7 @@ static void cb_init_bat_work(struct k_work *work){
 	initialized = true;
 
 	//k_mutex_unlock(&mutex);
-	update_leds_work();
+	
 	//k_work_reschedule(&update_leds_work, K_NO_WAIT);
 
 	LOG_DBG("Initialized battery led indicator.");
@@ -224,7 +229,7 @@ static void cb_init_bat_work(struct k_work *work){
 
 fail:
 	//k_mutex_unlock(&mutex);
-	return;
+	return;*/
 }
 
 static int bat_led_init(void){
