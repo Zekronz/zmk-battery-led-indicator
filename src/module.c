@@ -71,7 +71,7 @@ static int cb_usb(const zmk_event_t *eh){
 
 static int cb_activity(const zmk_event_t *eh){
 	struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
-	LOG_INF("\nevent: %d", (int)a->zmk_activity_state);
+	LOG_INF("\nevent: %d", (int)a->state);
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
