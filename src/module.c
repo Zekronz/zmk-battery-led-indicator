@@ -24,10 +24,10 @@ static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(DT_NODELABEL(green
 static const struct gpio_dt_spec stat1_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat1_gpios);
 static const struct gpio_dt_spec stat2_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat2_gpios);
 
-/*static struct k_mutex mutex;
+//static struct k_mutex mutex;
 
 static struct k_work_delayable init_bat_work;
-static struct k_work_delayable stat_bat_work;
+/*static struct k_work_delayable stat_bat_work;
 static struct k_work_delayable update_leds_work;
 static struct gpio_callback stat1_cb_data;
 static struct gpio_callback stat2_cb_data;
