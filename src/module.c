@@ -38,7 +38,7 @@ static volatile bool stat2_enabled = false;
 static volatile bool is_active = true;
 static volatile uint8_t bat_level = 100;
 
-static void cb_update_leds_work(struct k_work *work){
+/*static void cb_update_leds_work(struct k_work *work){
 	//k_mutex_lock(&mutex, K_FOREVER);
 
 	if(!initialized){
@@ -156,7 +156,7 @@ static void cb_stat_bat_work(struct k_work *work){
 
 static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
 	k_work_reschedule(&stat_bat_work, K_MSEC(20));
-}
+}*/
 
 static void cb_init_bat_work(struct k_work *work){
     gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
@@ -233,7 +233,7 @@ fail:
 }
 
 static int bat_led_init(void){
-	k_mutex_init(&mutex);
+	//k_mutex_init(&mutex);
 
 	k_work_init_delayable(&init_bat_work, cb_init_bat_work);
 	k_work_init_delayable(&stat_bat_work, cb_stat_bat_work);
@@ -246,7 +246,7 @@ static int bat_led_init(void){
     return 0;
 }
 
-ZMK_LISTENER(usb_state_listener, cb_usb);
+/*ZMK_LISTENER(usb_state_listener, cb_usb);
 ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
 
 ZMK_LISTENER(activity_state_listener, cb_activity);
@@ -254,5 +254,5 @@ ZMK_SUBSCRIPTION(activity_state_listener, zmk_activity_state_changed);
 
 ZMK_LISTENER(battery_state_listener, cb_bat);
 ZMK_SUBSCRIPTION(battery_state_listener, zmk_battery_state_changed);
-
+*/
 SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
