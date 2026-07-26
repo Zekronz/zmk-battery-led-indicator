@@ -24,20 +24,25 @@ static const struct gpio_dt_spec led_green = GPIO_DT_SPEC_GET(DT_NODELABEL(green
 static const struct gpio_dt_spec stat1_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat1_gpios);
 static const struct gpio_dt_spec stat2_pin = GPIO_DT_SPEC_GET(DT_NODELABEL(charge_status), stat2_gpios);
 
+static struct k_mutex mutex;
+
 static struct k_work_delayable init_bat_work;
 static struct k_work_delayable stat_bat_work;
+static struct k_work_delayable update_leds_work;
 static struct gpio_callback stat1_cb_data;
 static struct gpio_callback stat2_cb_data;
 
-static bool stat1_enabled = false;
-static bool stat2_enabled = false;
-static bool is_active = true;
-static uint8_t bat_level = 100;
+static volatile bool initialized = false;
+static volatile bool stat1_enabled = false;
+static volatile bool stat2_enabled = false;
+static volatile bool is_active = true;
+static volatile uint8_t bat_level = 100;
 
-static void update_leds(void){
-	if(!is_active){
-		gpio_pin_set_dt(&led_red, 0);
-		gpio_pin_set_dt(&led_green, 0);
+static void cb_update_leds_work(struct k_work *work){
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	if(!initialized){
+		k_mutex_unlock(&mutex);
 		return;
 	}
 
@@ -45,6 +50,16 @@ static void update_leds(void){
 
 	bool is_charging = (stat1_enabled && !stat2_enabled) && usb_power;
 	bool finished_charging = (stat1_enabled && stat2_enabled) && usb_power;
+	bool low_battery = (bat_level <= 10);
+	bool active = is_active;
+
+	k_mutex_unlock(&mutex);
+
+	if(!active && !usb_power){
+		gpio_pin_set_dt(&led_red, 0);
+		gpio_pin_set_dt(&led_green, 0);
+		return;
+	}
 
 	if(finished_charging){
 		gpio_pin_set_dt(&led_red, 0);
@@ -58,7 +73,7 @@ static void update_leds(void){
 		return;
 	}
 
-	if(bat_level <= 10){
+	if(low_battery){
 		gpio_pin_set_dt(&led_red, 1);
 		gpio_pin_set_dt(&led_green, 0);
 		return;
@@ -69,146 +84,158 @@ static void update_leds(void){
 }
 
 static int cb_usb(const zmk_event_t *eh){
-	update_leds();
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static int cb_activity(const zmk_event_t *eh){
-	struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	const struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
+	if(a == NULL){
+		k_mutex_unlock(&mutex);
+		return ZMK_EV_EVENT_BUBBLE;
+	}
 
 	bool active = (a->state == ZMK_ACTIVITY_ACTIVE);
-	if(active == is_active) return ZMK_EV_EVENT_BUBBLE;
+	if(active == is_active){
+		k_mutex_unlock(&mutex);
+		return ZMK_EV_EVENT_BUBBLE;
+	}
 
 	is_active = active;
 
 	if(is_active){
-		int s1 = gpio_pin_get_dt(&stat1_pin);
-		if(s1 < 0){ LOG_INF("[cb_activity] Reading stat1_pin returned %d", s1); return ZMK_EV_EVENT_BUBBLE; }
-
-		int s2 = gpio_pin_get_dt(&stat2_pin);
-		if(s2 < 0){ LOG_INF("[cb_activity] Reading stat2_pin returned %d", s2); return ZMK_EV_EVENT_BUBBLE; }
-
-		stat1_enabled = s1;
-		stat2_enabled = s2;
-
 		bat_level = zmk_battery_state_of_charge();
-	}
 
-	update_leds();
+		k_mutex_unlock(&mutex);
+		k_work_reschedule(&stat_bat_work, K_NO_WAIT);
+	}else{
+
+		k_mutex_unlock(&mutex);
+		k_work_reschedule(&update_leds_work, K_NO_WAIT);
+	}
 
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static int cb_bat(const zmk_event_t *eh){
-	struct zmk_battery_state_changed *b = as_zmk_battery_state_changed(eh);
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	const struct zmk_battery_state_changed *b = as_zmk_battery_state_changed(eh);
+	if(b == NULL){
+		k_mutex_unlock(&mutex);
+		return ZMK_EV_EVENT_BUBBLE;
+	}
+
 	bat_level = b->state_of_charge;
-	update_leds();
+	k_mutex_unlock(&mutex);
+
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static void cb_stat_bat_work(struct k_work *work){
-	LOG_INF("stat callback triggered");
+	LOG_DBG("stat callback triggered");
 
 	int s1 = gpio_pin_get_dt(&stat1_pin);
-	if(s1 < 0){ LOG_INF("[stat_bat_work] Reading stat1_pin returned %d", s1); return; }
-
 	int s2 = gpio_pin_get_dt(&stat2_pin);
-	if(s2 < 0){ LOG_INF("[stat_bat_work] Reading stat1_pin returned %d", s2); return; }
 
+	if(s1 < 0 || s2 < 0){
+		LOG_DBG("[stat_bat_work] Reading stat pins returned %d %d", s1, s2);
+		return;
+	}
+	
+	k_mutex_lock(&mutex, K_FOREVER);
 	stat1_enabled = s1;
 	stat2_enabled = s2;
-
-	update_leds();
+	k_mutex_unlock(&mutex);
+	
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
 }
 
 static void cb_stat_pins(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
-	int ret = k_work_reschedule(&stat_bat_work, K_MSEC(10));
-	if(ret < 0){ LOG_INF("[cb_stat_pins] cb_stat_bat_work reschedule returned %d", ret); return; }
+	k_work_reschedule(&stat_bat_work, K_MSEC(20));
 }
 
 static void cb_init_bat_work(struct k_work *work){
-	LOG_INF("\n");
-	//@TODO: Handle sleep
-	
-	/*
-		LED states:
-			-Charging.
-			-Finished charging.
-			-Low battery.
-			-Error state?
+	k_mutex_lock(&mutex, K_FOREVER);
 
-		Update LED state:
-			-Stat pins change.
-			-Usb connect/disconnect.
-			-Battery state.
-			-Activity state changes.
-
-	*/
-
-	if(!device_is_ready(led_red.port)){ LOG_INF("NOT READY: led_red"); return; }
-    if(!device_is_ready(led_green.port)){ LOG_INF("NOT READY: led_green"); return; }
-	if(!device_is_ready(stat1_pin.port)){ LOG_INF("NOT READY: stat1_pin"); return; }
-	if(!device_is_ready(stat2_pin.port)){ LOG_INF("NOT READY: stat2_pin"); return; }
+	if(!device_is_ready(led_red.port)){ LOG_DBG("NOT READY: led_red"); goto fail; }
+    if(!device_is_ready(led_green.port)){ LOG_DBG("NOT READY: led_green"); goto fail; }
+	if(!device_is_ready(stat1_pin.port)){ LOG_DBG("NOT READY: stat1_pin"); goto fail; }
+	if(!device_is_ready(stat2_pin.port)){ LOG_DBG("NOT READY: stat2_pin"); goto fail; }
 
 	int ret;
 
     ret = gpio_pin_configure_dt(&led_red, GPIO_OUTPUT_INACTIVE);
-	if(ret < 0){ LOG_INF("Configuring led_red returned %d", ret); return; }
+	if(ret < 0){ LOG_DBG("Configuring led_red returned %d", ret); goto fail; }
 
     ret = gpio_pin_configure_dt(&led_green, GPIO_OUTPUT_INACTIVE);
-	if(ret < 0){ LOG_INF("Configuring led_green returned %d", ret); return; }
+	if(ret < 0){ LOG_DBG("Configuring led_green returned %d", ret); goto fail; }
 
 	ret = gpio_pin_configure_dt(&stat1_pin, GPIO_INPUT);
-	if(ret < 0){ LOG_INF("Configuring stat1_pin returned %d", ret); return; }
+	if(ret < 0){ LOG_DBG("Configuring stat1_pin returned %d", ret); goto fail; }
 
 	ret = gpio_pin_configure_dt(&stat2_pin, GPIO_INPUT);
-	if(ret < 0){ LOG_INF("Configuring stat2_pin returned %d", ret); return; }
+	if(ret < 0){ LOG_DBG("Configuring stat2_pin returned %d", ret); goto fail; }
 
 	int s1 = gpio_pin_get_dt(&stat1_pin);
-	if(s1 < 0){ LOG_INF("[INIT] Reading stat1_pin returned %d", s1); return; }
+	if(s1 < 0){ LOG_DBG("[INIT] Reading stat1_pin returned %d", s1); goto fail; }
 
 	int s2 = gpio_pin_get_dt(&stat2_pin);
-	if(s2 < 0){ LOG_INF("[INIT] Reading stat2_pin returned %d", s2); return; }
+	if(s2 < 0){ LOG_DBG("[INIT] Reading stat2_pin returned %d", s2); goto fail; }
 
 	stat1_enabled = s1;
 	stat2_enabled = s2;
-
-	ret = gpio_pin_interrupt_configure_dt(&stat1_pin, GPIO_INT_EDGE_BOTH);
-	if(ret < 0){ LOG_INF("Configuring interrupt for stat1_pin returned %d", ret); return; }
-
-	ret = gpio_pin_interrupt_configure_dt(&stat2_pin, GPIO_INT_EDGE_BOTH);
-	if(ret < 0){ LOG_INF("Configuring interrupt for stat2_pin returned %d", ret); return; }
 
 	if(stat1_pin.port == stat2_pin.port){
 		gpio_init_callback(&stat1_cb_data, cb_stat_pins, BIT(stat1_pin.pin) | BIT(stat2_pin.pin));
 
 		ret = gpio_add_callback(stat1_pin.port, &stat1_cb_data);
-		if(ret < 0){ LOG_INF("(0) Adding callback for stat1 returned %d", ret); return; }
+		if(ret < 0){ LOG_DBG("(0) Adding callback for stat1 returned %d", ret); goto fail; }
 	}else {
 		gpio_init_callback(&stat1_cb_data, cb_stat_pins, BIT(stat1_pin.pin));
 		gpio_init_callback(&stat2_cb_data, cb_stat_pins, BIT(stat2_pin.pin));
 
 		ret = gpio_add_callback(stat1_pin.port, &stat1_cb_data);
-		if(ret < 0){ LOG_INF("(1) Adding callback for stat1 returned %d", ret); return; }
+		if(ret < 0){ LOG_DBG("(1) Adding callback for stat1 returned %d", ret); goto fail; }
 
 		ret = gpio_add_callback(stat2_pin.port, &stat2_cb_data);
-		if(ret < 0){ LOG_INF("(1) Adding callback for stat2 returned %d", ret); return; }
+		if(ret < 0){ LOG_DBG("(1) Adding callback for stat2 returned %d", ret); goto fail; }
 	}
+
+	ret = gpio_pin_interrupt_configure_dt(&stat1_pin, GPIO_INT_EDGE_BOTH);
+	if(ret < 0){ LOG_DBG("Configuring interrupt for stat1_pin returned %d", ret); goto fail; }
+
+	ret = gpio_pin_interrupt_configure_dt(&stat2_pin, GPIO_INT_EDGE_BOTH);
+	if(ret < 0){ LOG_DBG("Configuring interrupt for stat2_pin returned %d", ret); goto fail; }
 
 	bat_level = zmk_battery_state_of_charge();
 
-	update_leds();
+	initialized = true;
 
-	LOG_INF("Initialized battery led indicator.");
+	k_mutex_unlock(&mutex);
+	k_work_reschedule(&update_leds_work, K_NO_WAIT);
+
+	LOG_DBG("Initialized battery led indicator.");
+	return;
+
+fail:
+	k_mutex_unlock(&mutex);
+	return;
 }
 
 static int bat_led_init(void){
+	k_mutex_init(&mutex);
+
 	k_work_init_delayable(&init_bat_work, cb_init_bat_work);
 	k_work_init_delayable(&stat_bat_work, cb_stat_bat_work);
+	k_work_init_delayable(&update_leds_work, cb_update_leds_work);
 
 	int ret;
 	ret = k_work_schedule(&init_bat_work, K_MSEC(200));
-	if(ret < 0){ LOG_INF("cb_init_bar_work schedule returned %d", ret); return 0; }
+	if(ret < 0){ LOG_DBG("cb_init_bar_work schedule returned %d", ret); return 0; }
 
     return 0;
 }
