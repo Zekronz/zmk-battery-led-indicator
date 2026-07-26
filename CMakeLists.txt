@@ -1,20 +1,14 @@
 zephyr_library()
 
 if(CONFIG_ZMK_BATTERY_LED_INDICATOR)
-	zephyr_library_sources(src/module.c)
+	zephyr_library_sources(app PRIVATE src/module.c)
 endif()
 
 if(DEFINED ZMK_MODULE_DIR)
     zephyr_library_include_directories(${ZMK_MODULE_DIR}/app/include)
-	target_sources(app PRIVATE ${ZMK_MODULE_DIR}/app/src/events/battery_state_changed.c)
-	target_sources(app PRIVATE ${ZMK_MODULE_DIR}/app/src/battery.c)
 elseif(DEFINED ZEPHYR_ZMK_MODULE_DIR)
     zephyr_library_include_directories(${ZEPHYR_ZMK_MODULE_DIR}/app/include)
-	target_sources(app PRIVATE ${ZEPHYR_ZMK_MODULE_DIR}/app/src/events/battery_state_changed.c)
-	target_sources(app PRIVATE ${ZEPHYR_ZMK_MODULE_DIR}/app/src/battery.c)
 else()
     # Fallback if building directly within the main ZMK app context
     zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../zmk/app/include)
-	target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../zmk/app/src/events/battery_state_changed.c)
-	target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../zmk/app/src/battery.c)
 endif()
