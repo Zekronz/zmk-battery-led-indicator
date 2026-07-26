@@ -65,7 +65,13 @@ static void update_charge_status(void){
 
 static int cb_usb(const zmk_event_t *eh){
 	update_charge_status();
-	return ZMK_EV_EVENT_HANDLED;
+	return ZMK_EV_EVENT_BUBBLE;
+}
+
+static int cb_activity(const zmk_event_t *eh){
+	struct zmk_activity_state_changed *a = as_zmk_activity_state_changed(eh);
+	LOG_INF("\nevent: %d", (int)a->zmk_activity_state);
+	return ZMK_EV_EVENT_BUBBLE;
 }
 
 static void cb_stat_bat_work(struct k_work *work){
@@ -161,5 +167,8 @@ static int bat_led_init(void){
 
 ZMK_LISTENER(usb_state_listener, cb_usb);
 ZMK_SUBSCRIPTION(usb_state_listener, zmk_usb_conn_state_changed);
+
+ZMK_LISTENER(activity_state_listener, cb_activity);
+ZMK_SUBSCRIPTION(activity_state_listener, zmk_activity_state_changed );
 
 SYS_INIT(bat_led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
