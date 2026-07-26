@@ -1,4 +1,4 @@
 config ZMK_BATTERY_LED_INDICATOR
     bool "Battery LED indicator"
-	#depends on ZMK_BATTERY_REPORTING
+	select ZMK_BATTERY_REPORTING
     default y

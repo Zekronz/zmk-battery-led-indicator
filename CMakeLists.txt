@@ -1,8 +1,7 @@
-#zephyr_library()
+zephyr_library()
 
 if(CONFIG_ZMK_BATTERY_LED_INDICATOR)
-	#zephyr_library_sources(src/module.c)
-	target_sources(app PRIVATE src/module.c)
+	zephyr_library_sources(src/module.c)
 endif()
 
 if(DEFINED ZMK_MODULE_DIR)
