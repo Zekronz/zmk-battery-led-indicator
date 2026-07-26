@@ -216,7 +216,8 @@ static void cb_init_bat_work(struct k_work *work){
 	initialized = true;
 
 	//k_mutex_unlock(&mutex);
-	k_work_reschedule(&update_leds_work, K_NO_WAIT);
+	update_leds_work();
+	//k_work_reschedule(&update_leds_work, K_NO_WAIT);
 
 	LOG_DBG("Initialized battery led indicator.");
 	return;
