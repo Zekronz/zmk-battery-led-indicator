@@ -107,6 +107,7 @@ static int cb_activity(const zmk_event_t *eh){
 
 	if(is_active){
 		bat_level = zmk_battery_state_of_charge();
+		LOG_INF("active, bat level: %d", bat_level);
 
 		k_mutex_unlock(&mutex);
 		k_work_reschedule(&stat_bat_work, K_NO_WAIT);
@@ -129,6 +130,7 @@ static int cb_bat(const zmk_event_t *eh){
 	}
 
 	bat_level = b->state_of_charge;
+	LOG_INF("updated, bat level: %d", bat_level);
 	k_mutex_unlock(&mutex);
 
 	k_work_reschedule(&update_leds_work, K_NO_WAIT);
